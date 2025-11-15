@@ -39,18 +39,17 @@ def list_models(config_manager: ConfigManager) -> None:
     :param config_manager: Configuration manager instance
     :type config_manager: ConfigManager
     """
-    models_by_provider = config_manager.get_all_models()
-    if not models_by_provider:
-        console.print("[yellow]No providers or models found in config[/yellow]")
-        return
-
     table = Table(title="Available Models")
     table.add_column("Provider", style="cyan")
+    table.add_column("Base URL", style="cyan")
     table.add_column("Models", style="green")
 
-    for provider, models in models_by_provider.items():
-        models_str = ", ".join(models) if models else "[red]No models[/red]"
-        table.add_row(provider, models_str)
+    providers = config_manager.get_providers()
+    for provider_id, provider_config in providers.items():
+        models = provider_config.get("models", {})
+        base_url = provider_config.get("options", {}).get("baseURL")
+        models_str = ", ".join(models.keys()) if models else "[red]No models[/red]"
+        table.add_row(provider_id, base_url, models_str)
 
     console.print(table)
 
@@ -150,7 +149,7 @@ def add_provider(
         with httpx.Client(timeout=10) as client:
             response = client.get(v1_base_url)
             response.raise_for_status()
-    except httpx.HTTPError as _:
+    except httpx.HTTPError:
         url_errored = True
 
     if url_errored and base_url != v1_base_url:
@@ -158,7 +157,7 @@ def add_provider(
             with httpx.Client(timeout=10) as client:
                 response = client.get(base_url)
                 response.raise_for_status()
-        except httpx.HTTPError as _:
+        except httpx.HTTPError:
             url_errored = True
 
     if url_errored:
@@ -179,7 +178,7 @@ def add_provider(
     try:
         config_manager.add_provider(provider_id, provider_config)
         console.print(f"[green]Added provider: {provider_id} ({name})[/green]")
-        update_models(config_manager)
+        update_models(config_manager, provider_id)
     except FileNotFoundError as e:
         console.print(f"[red]Error: {e}[/red]")
         sys.exit(1)
@@ -257,15 +256,27 @@ def delete_model(config_manager: ConfigManager, model_id: str, auto_confirm: boo
         sys.exit(1)
 
 
-def update_models(config_manager: ConfigManager) -> None:
+def update_models(config_manager: ConfigManager, provider: str) -> None:
     """
-    Update models for all providers by querying their /v1/models endpoints.
+    Update models for specified provider(s) by querying their /v1/models endpoints.
 
     :param config_manager: Configuration manager instance
     :type config_manager: ConfigManager
+    :param provider: Provider ID to update models for, or 'all' to update all providers
+    :type provider: str
     """
     try:
         providers = config_manager.get_providers()
+        if provider.lower() != "all":
+            if provider not in providers:
+                console.print(f"[red]Error: Provider '{provider}' not found[/red]")
+                console.print("\n[yellow]Available providers:[/yellow]")
+                for provider_id in providers.keys():
+                    console.print(f"  - {provider_id}")
+                sys.exit(1)
+            else:
+                providers = {provider: providers[provider]}
+
         if not providers:
             console.print("[yellow]No providers found in config[/yellow]")
             return
@@ -278,6 +289,7 @@ def update_models(config_manager: ConfigManager) -> None:
         table.add_column("Preserved", style="yellow")
 
         for provider_id, provider_config in providers.items():
+            console.print(f"Updating models for provider: {provider_id}")
             base_url = provider_config.get("options", {}).get("baseURL")
             if not base_url:
                 table.add_row(provider_id, "[yellow]No baseURL[/yellow]", "-", "-", "-")
@@ -331,7 +343,13 @@ def create_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("show", help="Show current model configuration")
 
     # update command
-    subparsers.add_parser("update", help="Update models by querying provider /v1/models endpoints")
+    update_parser = subparsers.add_parser(
+        "update", help="Update models by querying provider /v1/models endpoints"
+    )
+    update_parser.add_argument(
+        "provider",
+        help="Provider ID to update, or 'all' to update all providers (e.g., lmstudio_mac or all)",
+    )
 
     # change command
     change_parser = subparsers.add_parser(
@@ -412,7 +430,7 @@ def main() -> None:
     elif args.command == "show":
         show_config(config_manager)
     elif args.command == "update":
-        update_models(config_manager)
+        update_models(config_manager, args.provider)
     elif args.command == "change":
         change_model(config_manager, args.model_value)
     elif args.command == "add":

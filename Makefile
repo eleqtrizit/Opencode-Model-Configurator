@@ -32,4 +32,4 @@ build:  ## Build distribution packages
 	python -m build
 
 dev:  ## Run CLI tool in dev mode without installation
-	python -m opencode_model_configurator.cli
+	python -m opencode_model_configurator

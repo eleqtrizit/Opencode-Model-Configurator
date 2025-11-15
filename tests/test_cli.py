@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from opencode_model_configurator.cli import (add_model, add_provider, change_model, create_parser, delete_model,
-                                             delete_provider, list_models, main, show_config)
+                                             delete_provider, list_models, main, show_config, update_models)
 from opencode_model_configurator.config_manager import ConfigManager
 
 
@@ -84,7 +84,7 @@ class TestListModels:
                 json.dump({}, f)
             manager = ConfigManager(empty_config)
             list_models(manager)
-            mock_console.print.assert_called_with("[yellow]No providers or models found in config[/yellow]")
+            assert mock_console.print.called
         finally:
             empty_config.unlink(missing_ok=True)
 
@@ -168,11 +168,18 @@ class TestChangeModel:
 class TestAddProvider:
     """Tests for add_provider function."""
 
+    @patch("httpx.Client")
+    @patch("opencode_model_configurator.cli.update_models")
     @patch("opencode_model_configurator.cli.console")
     def test_add_provider_success(
-        self, mock_console: MagicMock, config_manager: ConfigManager
+        self, mock_console: MagicMock, mock_update_models: MagicMock,
+        mock_httpx: MagicMock, config_manager: ConfigManager
     ) -> None:
         """Test adding a provider successfully."""
+        mock_client = MagicMock()
+        mock_httpx.return_value.__enter__.return_value = mock_client
+        mock_client.get.return_value.raise_for_status.return_value = None
+
         add_provider(
             config_manager,
             "provider3",
@@ -184,7 +191,7 @@ class TestAddProvider:
         assert len(providers) == 3
         assert "provider3" in providers
         assert providers["provider3"]["name"] == "Provider 3"
-        mock_console.print.assert_called_with("[green]Added provider: provider3 (Provider 3)[/green]")
+        mock_update_models.assert_called_once_with(config_manager, "provider3")
 
     @patch("opencode_model_configurator.cli.console")
     @patch("opencode_model_configurator.cli.sys")
@@ -355,11 +362,10 @@ class TestCreateParser:
         assert args.command == "change"
         assert args.model_value == "provider1/model1"
 
-        args = parser.parse_args(["add", "provider", "--id", "test", "--npm", "@ai-sdk/test",
+        args = parser.parse_args(["add", "provider", "--npm", "@ai-sdk/test",
                                   "--name", "Test", "--base-url", "http://test.com"])
         assert args.command == "add"
         assert args.add_type == "provider"
-        assert args.provider_id == "test"
         assert args.npm_package == "@ai-sdk/test"
         assert args.name == "Test"
 
@@ -379,6 +385,60 @@ class TestCreateParser:
         assert args.command == "delete"
         assert args.delete_type == "model"
         assert args.model_id == "model1"
+
+        args = parser.parse_args(["update", "all"])
+        assert args.command == "update"
+        assert args.provider == "all"
+
+        args = parser.parse_args(["update", "provider1"])
+        assert args.command == "update"
+        assert args.provider == "provider1"
+
+
+class TestUpdateModels:
+    """Tests for update_models function."""
+
+    @patch("opencode_model_configurator.cli.console")
+    @patch("opencode_model_configurator.config_manager.ConfigManager.fetch_provider_models")
+    def test_update_models_all_providers(
+        self, mock_fetch: MagicMock, mock_console: MagicMock, config_manager: ConfigManager
+    ) -> None:
+        """Test updating all providers."""
+        mock_fetch.return_value = ["model1", "model2"]
+        update_models(config_manager, "all")
+        assert mock_fetch.call_count == 2
+        assert mock_console.print.called
+
+    @patch("opencode_model_configurator.cli.console")
+    @patch("opencode_model_configurator.config_manager.ConfigManager.fetch_provider_models")
+    def test_update_models_single_provider(
+        self, mock_fetch: MagicMock, mock_console: MagicMock, config_manager: ConfigManager
+    ) -> None:
+        """Test updating a single provider."""
+        mock_fetch.return_value = ["model1", "model2"]
+        update_models(config_manager, "provider1")
+        assert mock_fetch.call_count == 1
+        assert mock_console.print.called
+
+    @patch("opencode_model_configurator.cli.console")
+    @patch("opencode_model_configurator.cli.sys")
+    def test_update_models_invalid_provider(
+        self, mock_sys: MagicMock, mock_console: MagicMock, config_manager: ConfigManager
+    ) -> None:
+        """Test updating with invalid provider name."""
+        update_models(config_manager, "nonexistent")
+        assert mock_sys.exit.called
+        assert mock_sys.exit.call_args[0][0] == 1
+
+    @patch("opencode_model_configurator.cli.console")
+    @patch("opencode_model_configurator.config_manager.ConfigManager.fetch_provider_models")
+    def test_update_models_case_insensitive_all(
+        self, mock_fetch: MagicMock, mock_console: MagicMock, config_manager: ConfigManager
+    ) -> None:
+        """Test that 'ALL' works case-insensitively."""
+        mock_fetch.return_value = ["model1", "model2"]
+        update_models(config_manager, "ALL")
+        assert mock_fetch.call_count == 2
 
 
 class TestMain:
@@ -416,8 +476,8 @@ class TestMain:
         main()
         mock_change_model.assert_called_once_with(mock_manager, "provider1/model1")
 
-    @patch("opencode_model_configurator.cli.sys.argv", ["ocs", "add", "provider", "--id",
-           "test", "--npm", "@ai-sdk/test", "--name", "Test", "--base-url", "http://test.com"])
+    @patch("opencode_model_configurator.cli.sys.argv", ["ocs", "add", "provider",
+           "--npm", "@ai-sdk/test", "--name", "Test", "--base-url", "http://test.com"])
     @patch("opencode_model_configurator.cli.add_provider")
     @patch("opencode_model_configurator.cli.ConfigManager")
     def test_main_add_provider_command(
@@ -427,7 +487,12 @@ class TestMain:
         mock_manager = MagicMock()
         mock_config_manager_class.return_value = mock_manager
         main()
-        mock_add_provider.assert_called_once_with(mock_manager, "test", "@ai-sdk/test", "Test", "http://test.com")
+        assert mock_add_provider.called
+        call_args = mock_add_provider.call_args[0]
+        assert call_args[0] == mock_manager
+        assert call_args[2] == "@ai-sdk/test"
+        assert call_args[3] == "Test"
+        assert call_args[4] == "http://test.com"
 
     @patch("opencode_model_configurator.cli.sys.argv", ["ocs", "add", "model", "provider1", "model1", "Model 1"])
     @patch("opencode_model_configurator.cli.add_model")
