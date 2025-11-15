@@ -299,8 +299,8 @@ def create_parser() -> argparse.ArgumentParser:
     add_provider_parser = add_subparsers.add_parser(
         "provider", help="Add a new provider"
     )
-    add_provider_parser.add_argument("--id", required=True, help="Provider ID", dest="provider_id")
-    add_provider_parser.add_argument("--npm", required=True, help="NPM package", dest="npm_package")
+    add_provider_parser.add_argument(
+        "--npm", required=True, help="NPM package", dest="npm_package", default="@ai-sdk/openai-compatible")
     add_provider_parser.add_argument("--name", required=True, help="Provider display name")
     add_provider_parser.add_argument(
         "--base-url", required=True, help="API base URL", dest="base_url"
@@ -365,7 +365,10 @@ def main() -> None:
             parser.parse_args(["add", "--help"])
             sys.exit(1)
         elif args.add_type == "provider":
-            add_provider(config_manager, args.provider_id, args.npm_package, args.name, args.base_url)
+            provider_id = args.name.lower().replace(" ", "-")
+            provider_id = [x for x in provider_id if x.isalnum() or x in ["-", "_"]]
+            provider_id = "".join(provider_id)
+            add_provider(config_manager, provider_id, args.npm_package, args.name, args.base_url)
         elif args.add_type == "model":
             add_model(config_manager, args.provider_id, args.model_id, args.model_name)
     elif args.command == "delete":
