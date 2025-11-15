@@ -319,7 +319,7 @@ def create_parser() -> argparse.ArgumentParser:
         "provider", help="Add a new provider"
     )
     add_provider_parser.add_argument(
-        "--npm", required=True, help="NPM package", dest="npm_package", default="@ai-sdk/openai-compatible")
+        "--npm", required=True, help="NPM package (default: @ai-sdk/openai-compatible)", dest="npm_package", default="@ai-sdk/openai-compatible")
     add_provider_parser.add_argument("--name", required=True, help="Provider display name")
     add_provider_parser.add_argument(
         "--base-url", required=True, help="API base URL", dest="base_url"
