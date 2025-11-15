@@ -1,6 +1,6 @@
 # Open Code Model Configurator
 
-A CLI tool for managing Opencode configuration. Switch, add, delete, set different AI models and providers for various router types (default, background, think, longContext, webSearch) with a simple command-line interface.
+A CLI tool for managing Opencode configuration. Switch, add, delete, set different AI models and providers.
 
 ## Features
 
