@@ -290,7 +290,7 @@ def create_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Path to config file (default: ~/.config/opencode/config.json)",
     )
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands", parser_class=HelpOnErrorParser)
 
     # ls command
     subparsers.add_parser("ls", help="List all models grouped by provider")
@@ -311,12 +311,12 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     # add command with subcommands
-    add_parser = subparsers.add_parser("add", help="Add provider or model", parser_class=HelpOnErrorParser)
-    add_subparsers = add_parser.add_subparsers(dest="add_type", help="What to add")
+    add_parser = subparsers.add_parser("add", help="Add provider or model")
+    add_subparsers = add_parser.add_subparsers(dest="add_type", help="What to add", parser_class=HelpOnErrorParser)
 
     # add provider subcommand
     add_provider_parser = add_subparsers.add_parser(
-        "provider", help="Add a new provider", parser_class=HelpOnErrorParser
+        "provider", help="Add a new provider"
     )
     add_provider_parser.add_argument(
         "--npm", required=True, help="NPM package", dest="npm_package", default="@ai-sdk/openai-compatible")
@@ -327,19 +327,20 @@ def create_parser() -> argparse.ArgumentParser:
 
     # add model subcommand
     add_model_parser = add_subparsers.add_parser(
-        "model", help="Add a model to a provider", parser_class=HelpOnErrorParser
+        "model", help="Add a model to a provider"
     )
     add_model_parser.add_argument("provider_id", help="Provider ID")
     add_model_parser.add_argument("model_id", help="Model ID")
     add_model_parser.add_argument("model_name", help="Model display name")
 
     # delete command with subcommands
-    delete_parser = subparsers.add_parser("delete", help="Delete provider or model", parser_class=HelpOnErrorParser)
-    delete_subparsers = delete_parser.add_subparsers(dest="delete_type", help="What to delete")
+    delete_parser = subparsers.add_parser("delete", help="Delete provider or model")
+    delete_subparsers = delete_parser.add_subparsers(
+        dest="delete_type", help="What to delete", parser_class=HelpOnErrorParser)
 
     # delete provider subcommand
     delete_provider_parser = delete_subparsers.add_parser(
-        "provider", help="Delete a provider", parser_class=HelpOnErrorParser
+        "provider", help="Delete a provider"
     )
     delete_provider_parser.add_argument("provider_id", help="Provider ID to delete")
     delete_provider_parser.add_argument(
@@ -348,7 +349,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     # delete model subcommand
     delete_model_parser = delete_subparsers.add_parser(
-        "model", help="Delete a model", parser_class=HelpOnErrorParser
+        "model", help="Delete a model"
     )
     delete_model_parser.add_argument("model_id", help="Model ID to delete")
     delete_model_parser.add_argument(
