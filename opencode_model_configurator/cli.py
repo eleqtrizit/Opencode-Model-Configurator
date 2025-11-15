@@ -142,6 +142,7 @@ def add_provider(
         base_url = base_url[:-1]
     if not base_url.endswith("/v1"):
         v1_base_url = f"{base_url}/v1"
+    success_base_url = None
 
     # lets test if the base url is valid
     url_errored = False
@@ -149,6 +150,7 @@ def add_provider(
         with httpx.Client(timeout=10) as client:
             response = client.get(v1_base_url)
             response.raise_for_status()
+            success_base_url = v1_base_url
     except httpx.HTTPError:
         url_errored = True
 
@@ -157,6 +159,7 @@ def add_provider(
             with httpx.Client(timeout=10) as client:
                 response = client.get(base_url)
                 response.raise_for_status()
+                success_base_url = base_url
         except httpx.HTTPError:
             url_errored = True
 
@@ -171,7 +174,7 @@ def add_provider(
     provider_config = {
         "npm": npm_package,
         "name": name,
-        "options": {"baseURL": base_url},
+        "options": {"baseURL": success_base_url},
         "models": {},
     }
 

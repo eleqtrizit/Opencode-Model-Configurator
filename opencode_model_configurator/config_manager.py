@@ -202,9 +202,8 @@ class ConfigManager:
         :rtype: list[str]
         :raises httpx.HTTPError: If request fails
         """
-        url = f"{base_url.rstrip('/')}/v1/models"
         with httpx.Client(timeout=timeout) as client:
-            response = client.get(url)
+            response = client.get(f"{base_url}/models")
             response.raise_for_status()
             data = response.json()
             return [model.get("id", "") for model in data.get("data", []) if model.get("id")]

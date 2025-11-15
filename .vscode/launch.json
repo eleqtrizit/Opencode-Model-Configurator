@@ -12,6 +12,16 @@
             "args": [
                 "ls"
             ]
+        },
+        {
+            "name": "ocs update all",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "opencode_model_configurator",
+            "args": [
+                "update",
+                "spark"
+            ]
         }
     ]
 }
