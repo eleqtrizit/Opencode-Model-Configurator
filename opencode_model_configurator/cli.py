@@ -138,6 +138,12 @@ def add_provider(
     :param base_url: API base URL
     :type base_url: str
     """
+
+    if base_url.endswith("/"):
+        base_url = base_url[:-1]
+    if not base_url.endswith("/v1"):
+        base_url = f"{base_url}/v1"
+
     provider_config = {
         "npm": npm_package,
         "name": name,
