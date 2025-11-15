@@ -13,6 +13,25 @@ from opencode_model_configurator.config_manager import ConfigManager
 console = Console()
 
 
+class HelpOnErrorParser(argparse.ArgumentParser):
+    """
+    Custom ArgumentParser that prints full help when arguments are missing.
+
+    :param args: Positional arguments for ArgumentParser
+    :param kwargs: Keyword arguments for ArgumentParser
+    """
+
+    def error(self, message: str) -> None:
+        """
+        Override error to print full help instead of short usage.
+
+        :param message: Error message from argparse
+        :type message: str
+        """
+        self.print_help(sys.stderr)
+        self.exit(2, f"\n{self.prog}: error: {message}\n")
+
+
 def list_models(config_manager: ConfigManager) -> None:
     """
     List all models grouped by provider.
@@ -262,7 +281,7 @@ def create_parser() -> argparse.ArgumentParser:
     :return: Configured argument parser
     :rtype: argparse.ArgumentParser
     """
-    parser = argparse.ArgumentParser(
+    parser = HelpOnErrorParser(
         prog="ocs",
         description="Open Code Model Configurator",
     )
@@ -292,12 +311,12 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     # add command with subcommands
-    add_parser = subparsers.add_parser("add", help="Add provider or model")
+    add_parser = subparsers.add_parser("add", help="Add provider or model", parser_class=HelpOnErrorParser)
     add_subparsers = add_parser.add_subparsers(dest="add_type", help="What to add")
 
     # add provider subcommand
     add_provider_parser = add_subparsers.add_parser(
-        "provider", help="Add a new provider"
+        "provider", help="Add a new provider", parser_class=HelpOnErrorParser
     )
     add_provider_parser.add_argument(
         "--npm", required=True, help="NPM package", dest="npm_package", default="@ai-sdk/openai-compatible")
@@ -308,19 +327,19 @@ def create_parser() -> argparse.ArgumentParser:
 
     # add model subcommand
     add_model_parser = add_subparsers.add_parser(
-        "model", help="Add a model to a provider"
+        "model", help="Add a model to a provider", parser_class=HelpOnErrorParser
     )
     add_model_parser.add_argument("provider_id", help="Provider ID")
     add_model_parser.add_argument("model_id", help="Model ID")
     add_model_parser.add_argument("model_name", help="Model display name")
 
     # delete command with subcommands
-    delete_parser = subparsers.add_parser("delete", help="Delete provider or model")
+    delete_parser = subparsers.add_parser("delete", help="Delete provider or model", parser_class=HelpOnErrorParser)
     delete_subparsers = delete_parser.add_subparsers(dest="delete_type", help="What to delete")
 
     # delete provider subcommand
     delete_provider_parser = delete_subparsers.add_parser(
-        "provider", help="Delete a provider"
+        "provider", help="Delete a provider", parser_class=HelpOnErrorParser
     )
     delete_provider_parser.add_argument("provider_id", help="Provider ID to delete")
     delete_provider_parser.add_argument(
@@ -329,7 +348,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     # delete model subcommand
     delete_model_parser = delete_subparsers.add_parser(
-        "model", help="Delete a model"
+        "model", help="Delete a model", parser_class=HelpOnErrorParser
     )
     delete_model_parser.add_argument("model_id", help="Model ID to delete")
     delete_model_parser.add_argument(

@@ -4,13 +4,26 @@ A CLI tool for managing Opencode configuration. Switch, add, delete, set differe
 
 ## Features
 
-- List all available models grouped by provider
-- View current router configuration
-- Change router settings for different use cases
-- Set long context threshold for longContext router
-- Delete/unset router configurations (except default)
-- Add and manage providers and models
-- Auto-detect provider when model name is unique
+```sh
+ocs --help
+usage: ocs [-h] [--config CONFIG] {ls,show,update,change,add,delete} ...
+
+Open Code Model Configurator
+
+positional arguments:
+  {ls,show,update,change,add,delete}
+                        Available commands
+    ls                  List all models grouped by provider
+    show                Show current model configuration
+    update              Update models by querying provider /v1/models endpoints
+    change              Change the model configuration value
+    add                 Add provider or model
+    delete              Delete provider or model
+
+options:
+  -h, --help            show this help message and exit
+  --config CONFIG       Path to config file (default: ~/.config/opencode/config.json)
+```
 
 
 ## Fast Install
@@ -70,41 +83,6 @@ ocs ls
 **Show current router configuration:**
 ```bash
 ocs show
-```
-
-#### Router Management
-
-**Change a router setting:**
-```bash
-# For default router (required - cannot be deleted)
-ocs change default anthropic,claude-3-5-sonnet-20241022
-
-# For background tasks
-ocs change background anthropic,claude-3-5-haiku-20241022
-
-# For thinking/reasoning tasks
-ocs change think openai,o1
-
-# For long context operations
-ocs change longContext anthropic,claude-3-5-sonnet-20241022
-
-# For web search tasks
-ocs change webSearch openai,gpt-4o
-```
-
-**Set long context threshold:**
-
-```bash
-# Requires longContext router to be configured first
-ocs set-threshold 100000
-```
-
-**Delete/unset a router configuration:**
-
-```bash
-# Available for: background, think, longContext, webSearch
-# Note: default router cannot be deleted
-ocs delete router background
 ```
 
 #### Provider and Model Management
