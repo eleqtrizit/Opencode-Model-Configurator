@@ -60,33 +60,76 @@ make dev
 
 ### Usage
 
+#### Basic Commands
+
+**List all available models:**
 ```bash
-# List all models
 ocs ls
+```
 
-# Show current router configuration
+**Show current router configuration:**
+```bash
 ocs show
+```
 
-# Change a router setting
+#### Router Management
+
+**Change a router setting:**
+```bash
+# For default router (required - cannot be deleted)
 ocs change default anthropic,claude-3-5-sonnet-20241022
 
-# Set long context threshold (requires longContext router to be set first)
-ocs set longContextThreshold 1000
+# For background tasks
+ocs change background anthropic,claude-3-5-haiku-20241022
 
-# Add a provider
-ocs add provider --name myprovider --base-url https://api.example.com --api-key YOUR_KEY
+# For thinking/reasoning tasks
+ocs change think openai,o1
 
-# Add a model to a provider
-ocs add model myprovider my-model-name
+# For long context operations
+ocs change longContext anthropic,claude-3-5-sonnet-20241022
 
-# Delete a provider (with confirmation)
-ocs delete provider myprovider
+# For web search tasks
+ocs change webSearch openai,gpt-4o
+```
 
-# Delete a model (with confirmation)
-ocs delete model my-model-name
+**Set long context threshold:**
 
-# Delete/unset a router configuration (background, think, longContext, or webSearch)
+```bash
+# Requires longContext router to be configured first
+ocs set-threshold 100000
+```
+
+**Delete/unset a router configuration:**
+
+```bash
+# Available for: background, think, longContext, webSearch
 # Note: default router cannot be deleted
 ocs delete router background
+```
+
+#### Provider and Model Management
+
+**Add a provider:**
+
+```bash
+ocs add provider --name myprovider --base-url https://api.example.com --api-key YOUR_KEY
+```
+
+**Add a model to a provider:**
+
+```bash
+ocs add model myprovider my-model-name
+```
+
+**Delete a provider (with confirmation):**
+
+```bash
+ocs delete provider myprovider
+```
+
+**Delete a model (with confirmation):**
+
+```bash
+ocs delete model my-model-name
 ```
 
