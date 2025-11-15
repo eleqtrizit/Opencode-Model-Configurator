@@ -142,7 +142,32 @@ def add_provider(
     if base_url.endswith("/"):
         base_url = base_url[:-1]
     if not base_url.endswith("/v1"):
-        base_url = f"{base_url}/v1"
+        v1_base_url = f"{base_url}/v1"
+
+    # lets test if the base url is valid
+    url_errored = False
+    try:
+        with httpx.Client(timeout=10) as client:
+            response = client.get(v1_base_url)
+            response.raise_for_status()
+    except httpx.HTTPError as _:
+        url_errored = True
+
+    if url_errored and base_url != v1_base_url:
+        try:
+            with httpx.Client(timeout=10) as client:
+                response = client.get(base_url)
+                response.raise_for_status()
+        except httpx.HTTPError as _:
+            url_errored = True
+
+    if url_errored:
+        console.print(f"[red]Error: Invalid base URL: {base_url}[/red]")
+        if base_url != v1_base_url:
+            console.print(f"Tried both {v1_base_url} and {base_url}")
+        else:
+            console.print(f"Tried {base_url}")
+        sys.exit(1)
 
     provider_config = {
         "npm": npm_package,
@@ -154,6 +179,7 @@ def add_provider(
     try:
         config_manager.add_provider(provider_id, provider_config)
         console.print(f"[green]Added provider: {provider_id} ({name})[/green]")
+        update_models(config_manager)
     except FileNotFoundError as e:
         console.print(f"[red]Error: {e}[/red]")
         sys.exit(1)
@@ -176,7 +202,6 @@ def add_model(config_manager: ConfigManager, provider_id: str, model_id: str, mo
         model_config = {"name": model_name}
         config_manager.add_model_to_provider(provider_id, model_id, model_config)
         console.print(f"[green]Added model '{model_id}' to provider '{provider_id}'[/green]")
-        update_models(config_manager)
     except (ValueError, FileNotFoundError) as e:
         console.print(f"[red]Error: {e}[/red]")
         sys.exit(1)
@@ -326,7 +351,10 @@ def create_parser() -> argparse.ArgumentParser:
         "provider", help="Add a new provider"
     )
     add_provider_parser.add_argument(
-        "--npm", required=True, help="NPM package (default: @ai-sdk/openai-compatible)", dest="npm_package", default="@ai-sdk/openai-compatible")
+        "--npm", required=False,
+        help="NPM package (default: @ai-sdk/openai-compatible)",
+        dest="npm_package",
+        default="@ai-sdk/openai-compatible")
     add_provider_parser.add_argument("--name", required=True, help="Provider display name")
     add_provider_parser.add_argument(
         "--base-url", required=True, help="API base URL", dest="base_url"

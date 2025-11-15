@@ -116,3 +116,8 @@ ocs delete provider myprovider
 ocs delete model my-model-name
 ```
 
+```bash
+# will use auto discovery to determine if /v1 is required automatically
+ocs add provider --name spark --base-url http://localhost
+```
+
