@@ -35,6 +35,11 @@ Install CLI:
 uv tool install git+https://github.com/eleqtrizit/Opencode-Model-Configurator.git
 ```
 
+Update CLI:
+```
+uv tool update opencode-model-configurator
+```
+
 ## Development Setup
 
 ### Prerequisites
