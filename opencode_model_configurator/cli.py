@@ -176,6 +176,7 @@ def add_model(config_manager: ConfigManager, provider_id: str, model_id: str, mo
         model_config = {"name": model_name}
         config_manager.add_model_to_provider(provider_id, model_id, model_config)
         console.print(f"[green]Added model '{model_id}' to provider '{provider_id}'[/green]")
+        update_models(config_manager)
     except (ValueError, FileNotFoundError) as e:
         console.print(f"[red]Error: {e}[/red]")
         sys.exit(1)
