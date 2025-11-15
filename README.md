@@ -19,7 +19,7 @@ https://docs.astral.sh/uv/getting-started/installation/
 
 Install CLI:
 ```
-uv tool install git+https://github.com/eleqtrizit/opencode_model_configurator
+uv tool install git+https://github.com/eleqtrizit/Opencode-Model-Configurator.git
 ```
 
 ## Development Setup
@@ -35,7 +35,7 @@ uv tool install git+https://github.com/eleqtrizit/opencode_model_configurator
 
 Clone the repository:
 ```bash
-git clone https://github.com/eleqtrizit/opencode_model_configurator
+git clone https://github.com/eleqtrizit/Opencode-Model-Configurator.git
 cd opencode_model_configurator
 ```
 
